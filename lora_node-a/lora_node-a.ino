@@ -522,8 +522,7 @@ void finishCollection() {
         ":B:" +
         dataB +
         ":C:" +
-        dataC +
-        "break";
+        dataC;
 
 
     // Example:
@@ -701,8 +700,7 @@ void checkCollectionTimeout() {
             ":B:" +
             dataB +
             ":C:" +
-            dataC +
-            "break";
+            dataC;
 
 
         Serial.println();

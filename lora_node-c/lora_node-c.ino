@@ -60,11 +60,49 @@ LoRa_E22 e22(
 
 
 // ============================================================
-// RANDOM SENSOR C
+// SENSOR C
 // ============================================================
+#define SENSOR_POWER_PIN 27
+#define SENSOR_RX 25
+#define SENSOR_TX 26
 
-int readSensorC() {
-    return random(10, 500);
+HardwareSerial sensor(1);
+
+int readSensorOnDemand() {
+
+    int lastDistance = -1;
+
+    // Clear old UART bytes
+    while (sensor.available()) {
+        sensor.read();
+    }
+
+    unsigned long startTime = millis();
+
+    while (millis() - startTime < 1000) {
+
+        if (sensor.available() >= 4) {
+
+            byte header = sensor.read();
+
+            if (header != 0xFF) continue;
+
+            byte highByte = sensor.read();
+            byte lowByte = sensor.read();
+            byte checksum = sensor.read();
+
+            byte calculatedChecksum =
+                (0xFF + highByte + lowByte) & 0xFF;
+
+            if (checksum != calculatedChecksum) continue;
+
+            int distance = (highByte << 8) | lowByte;
+
+            lastDistance = distance;
+        }
+    }
+
+    return lastDistance;
 }
 
 
@@ -110,8 +148,7 @@ void processCall(String requestId) {
     Serial.println("REQUEST ID: " + requestId);
     Serial.println("========================================");
 
-    int sensorValueC = readSensorC();
-
+    int sensorValueC = readSensorOnDemand();
 
     Serial.println();
     Serial.print("RANDOM SENSOR C VALUE: ");
@@ -122,7 +159,8 @@ void processCall(String requestId) {
         "DATA:" +
         requestId +
         ":C:" +
-        String(sensorValueC);
+        String(sensorValueC) +
+        "break";
 
 
     // Example:
@@ -269,7 +307,6 @@ void setup() {
 
     delay(1000);
 
-
     Serial.println();
     Serial.println("========================================");
     Serial.println("NODE C STARTING");
@@ -294,6 +331,13 @@ void setup() {
         SERIAL_8N1,
         LORA_RX,
         LORA_TX
+    );
+
+    sensor.begin(
+        9600,
+        SERIAL_8N1,
+        SENSOR_RX,
+        SENSOR_TX
     );
 
 
